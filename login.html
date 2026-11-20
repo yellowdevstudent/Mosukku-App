@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Masuk Mosukku</title>
+<style>
+:root{--bg:#F3F8F4;--card:#fff;--fg:#12261B;--muted:#5B6F63;--line:#D5E3DA;--accent:#0B7A3E;--on:#fff;--err:#B42318;--ok:#0B7A3E;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0A0B0D;--card:#17191D;--fg:#E7EAF0;--muted:#9AA3B2;--line:#2A2E36;--accent:#1877F2;--ok:#4CC38A;--err:#FF7B72;color-scheme:dark}}
+*{box-sizing:border-box}[hidden]{display:none!important}body{margin:0;min-height:100vh;display:grid;place-items:center;background:var(--bg);color:var(--fg);font:15px/1.5 "Plus Jakarta Sans",system-ui,sans-serif;padding:16px max(16px,env(safe-area-inset-left,0px))}
+.box{width:100%;max-width:400px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px;display:flex;flex-direction:column;gap:14px}
+h1{margin:0;font-size:22px}p{margin:0}.muted{color:var(--muted);font-size:13px}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--bg);padding:4px;border-radius:12px}
+.tabs button{border:0;background:none;color:var(--muted);font:inherit;font-weight:700;padding:8px 4px;border-radius:9px;cursor:pointer}
+.tabs button.on{background:var(--accent);color:var(--on)}
+label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+input{font:inherit;padding:11px 12px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.btn{font:inherit;font-weight:700;border:0;border-radius:12px;padding:12px;background:var(--accent);color:var(--on);cursor:pointer}
+.btn.line{background:none;color:var(--fg);border:1px solid var(--line)}.btn:disabled{opacity:.55}
+a,.lnk{color:var(--accent);background:none;border:0;font:inherit;font-size:13px;cursor:pointer;padding:0;text-align:left;text-decoration:underline}
+#msg{min-height:20px;font-size:13px}#msg.err{color:var(--err)}#msg.ok{color:var(--ok)}
+.logo{width:56px;height:56px;border-radius:16px;background:var(--accent);display:grid;place-items:center;color:var(--on);font-size:26px;font-weight:800}
+</style></head><body>
+<main class="box">
+ <div class="logo">M</div>
+ <div><h1 id="ttl">Masuk ke Mosukku</h1><p class="muted" id="sub">Belajar dan ibadah bersama. Akun menyimpan chat, status, dan undanganmu.</p></div>
+ <div class="tabs" id="tabs"><button data-m="in" class="on" type="button">Masuk</button><button data-m="up" type="button">Daftar</button><button data-m="guest" type="button">Tamu</button></div>
+ <form id="f" class="box" style="border:0;padding:0;gap:12px">
+  <label id="lEm">Email<input id="em" type="email" autocomplete="email" required></label>
+  <label id="lPw">Kata sandi<input id="pw" type="password" minlength="6" autocomplete="current-password" required></label>
+  <label id="lPw2" hidden>Ulangi kata sandi<input id="pw2" type="password" minlength="6" autocomplete="new-password"></label>
+  <button class="btn" id="go" type="submit">Masuk</button>
+  <button class="lnk" id="forgot" type="button">Lupa kata sandi?</button>
+ </form>
+ <div id="gst" hidden><p class="muted">Masuk sebagai tamu tanpa email. Chat dan statusmu terikat ke browser ini. Kamu bisa mendaftar kapan saja dan datanya tetap terbawa.</p><button class="btn" id="goG" type="button" style="margin-top:12px;width:100%">Lanjut sebagai tamu</button></div>
+ <button class="btn line" id="gg" type="button">Masuk dengan Google</button>
+ <p id="msg" role="status"></p>
+ <p class="muted">Dengan masuk, kamu setuju memakai Mosukku dengan sopan. Jangan bagikan kata sandimu.</p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script>
+const SB_URL='https://ezwjyuawdjyqfjwbxwla.supabase.co',SB_KEY='sb_publishable_my6Gcv08c8eO9wOhbIhxoA_E9uFx9cv',HOME='index.html';
+const $=s=>document.querySelector(s);let mode='in',sess=null,recover=/type=recovery/.test(location.hash);
+const sb=window.supabase&&window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+const say=(t,k)=>{$('#msg').textContent=t||'';$('#msg').className=k||''};
+const T={in:['Masuk ke Mosukku','Masuk'],up:['Buat akun Mosukku','Daftar'],guest:['Masuk sebagai tamu','']};
+function setMode(m){mode=m;$$('#tabs button').forEach(b=>b.classList.toggle('on',b.dataset.m===m));$('#ttl').textContent=T[m][0];$('#go').textContent=T[m][1];
+ $('#f').hidden=m==='guest';$('#gst').hidden=m!=='guest';$('#lPw2').hidden=m!=='up';$('#pw2').required=m==='up';$('#forgot').hidden=m!=='in';$('#pw').autocomplete=m==='up'?'new-password':'current-password';say('')}
+function $$(s){return [...document.querySelectorAll(s)]}
+$('#tabs').onclick=e=>{const b=e.target.closest('button');if(b)setMode(b.dataset.m)};
+const bad=e=>({'Invalid login credentials':'Email atau kata sandi salah.','User already registered':'Email ini sudah terdaftar. Coba Masuk.','Email not confirmed':'Email belum dikonfirmasi. Cek kotak masuk emailmu.'}[e.message]||e.message);
+function done(){say('Berhasil. Mengalihkan...','ok');location.replace(HOME)}
+async function init(){
+ if(!sb){say('Layanan masuk belum bisa dimuat. Periksa koneksi internetmu.','err');$('#go').disabled=true;return}
+ if(recover){$('#ttl').textContent='Kata sandi baru';$('#sub').textContent='Masukkan kata sandi baru untuk akunmu.';$('#tabs').hidden=true;$('#lEm').hidden=true;$('#em').required=false;$('#forgot').hidden=true;$('#gg').hidden=true;$('#go').textContent='Simpan kata sandi';mode='rec';return}
+ const {data}=await sb.auth.getSession();sess=data.session;
+ if(sess&&!sess.user.is_anonymous&&!/ganti/.test(location.search))return done();
+ if(sess&&sess.user.is_anonymous){setMode('up');$('#sub').textContent='Kamu sedang masuk sebagai tamu. Daftar sekarang dan chat, status, serta datamu tetap terbawa.'}}
+$('#f').onsubmit=async e=>{e.preventDefault();say('');$('#go').disabled=true;try{
+ const em=$('#em').value.trim(),pw=$('#pw').value;
+ if(mode==='rec'){const r=await sb.auth.updateUser({password:pw});if(r.error)throw r.error;say('Kata sandi diganti.','ok');history.replaceState(null,'',location.pathname);return setTimeout(done,700)}
+ if(mode==='up'){if(pw!==$('#pw2').value)throw {message:'Kata sandi tidak sama.'};
+  if(sess&&sess.user.is_anonymous){const r=await sb.auth.updateUser({email:em,password:pw});if(r.error)throw r.error;say('Cek emailmu dan klik tautan konfirmasi untuk menyelesaikan pendaftaran. Datamu tetap terbawa.','ok');return}
+  const r=await sb.auth.signUp({email:em,password:pw,options:{emailRedirectTo:location.origin+location.pathname.replace(/[^/]*$/,'')+HOME}});if(r.error)throw r.error;
+  if(r.data.session)return done();say('Cek emailmu dan klik tautan konfirmasi, lalu kembali ke sini untuk Masuk.','ok');return}
+ const r=await sb.auth.signInWithPassword({email:em,password:pw});if(r.error)throw r.error;done()
+}catch(er){say(bad(er),'err')}finally{$('#go').disabled=false}};
+$('#forgot').onclick=async()=>{const em=$('#em').value.trim();if(!em)return say('Isi emailmu dulu di kolom Email.','err');
+ const r=await sb.auth.resetPasswordForEmail(em,{redirectTo:location.origin+location.pathname});say(r.error?bad(r.error):'Tautan pengaturan ulang dikirim ke emailmu.',r.error?'err':'ok')};
+$('#goG').onclick=async()=>{$('#goG').disabled=true;try{if(!sess){const r=await sb.auth.signInAnonymously();if(r.error)throw r.error}done()}catch(er){say(bad(er)+' (pastikan "Allow anonymous sign-ins" aktif di Supabase)','err')}finally{$('#goG').disabled=false}};
+$('#gg').onclick=async()=>{const r=await sb.auth.signInWithOAuth({provider:'google',options:{redirectTo:location.origin+location.pathname.replace(/[^/]*$/,'')+HOME}});if(r.error)say('Google belum diaktifkan di Supabase ('+r.error.message+')','err')};
+init();
+</script></body></html>
